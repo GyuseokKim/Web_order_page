@@ -7,7 +7,7 @@
   <style>
     :root{
       --bg:#0b1120; --card:#0f172a; --border:#1f2937;
-      --text:#e5e7eb; --sub:#9ca3af; --accent:#22c55e;
+      --text:#e5e7eb; --sub:#9ca3af; --accent:#22c55e; --danger:#ef4444;
     }
     *{box-sizing:border-box;}
     body{
@@ -19,24 +19,32 @@
     .card{
       background:var(--card); border:1px solid var(--border);
       border-radius:16px; padding:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
     }
     h1{margin:0 0 12px;}
-    label{font-size:13px;color:var(--sub);}
+    label{font-size:13px;color:var(--sub); display:block; margin-bottom:6px;}
     input{
       width:100%; padding:12px; border-radius:12px;
       border:1px solid var(--border); background:#111827; color:#fff;
+      outline:none;
     }
     .grid{display:grid;gap:12px;}
     .grid.two{grid-template-columns:1fr 1fr;}
+    #menuBox{
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      background:rgba(0,0,0,.12);
+    }
     .menu-head,.menu-item{
       display:grid;
       grid-template-columns:minmax(220px,1fr) 70px 120px 80px;
       align-items:center; gap:8px;
       padding:8px 10px;
     }
-    .menu-head{color:var(--sub);font-size:12px;}
-    .menu-item{border-top:1px solid var(--border);}
-    .cat{padding:8px 10px;font-weight:800;}
+    .menu-head{color:var(--sub);font-size:12px; background:rgba(255,255,255,0.03);}
+    .menu-item{border-top:1px solid var(--border); font-size:13px;}
+    .cat{padding:8px 10px; font-weight:800; border-top:1px solid var(--border); background:rgba(255,255,255,0.02);}
     .qtyBox{
       display:flex; align-items:center; justify-content:flex-end; gap:6px;
     }
@@ -51,123 +59,224 @@
       border-radius:8px; border:1px solid var(--border);
       background:#020617; color:#fff;
     }
-    .summary{border-top:1px dashed var(--border);margin-top:12px;padding-top:12px;}
-    .row{display:flex;justify-content:space-between;margin:4px 0;}
+    .summary{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(255,255,255,0.02);
+    }
+    .row{display:flex;justify-content:space-between;gap:10px;margin:6px 0;}
+    .error{margin-top:8px; color:var(--danger); font-size:13px; display:none;}
     .btn{
-      width:100%;margin-top:16px;padding:14px;
+      width:100%;margin-top:14px;padding:14px;
       border-radius:14px;border:0;
-      background:var(--accent);font-weight:900;
+      background:var(--accent);font-weight:900; cursor:pointer;
+      color:#052e16;
+    }
+    @media (max-width:420px){
+      body{padding:12px;}
+      .menu-head,.menu-item{grid-template-columns:minmax(170px,1fr) 66px 108px 70px; gap:6px;}
     }
   </style>
 </head>
 <body>
 <div class="wrap">
-<div class="card">
-<h1>상품 주문</h1>
+  <div class="card">
+    <h1>상품 주문</h1>
 
-<div class="grid">
-  <div>
-    <label>주소</label>
-    <input id="address">
-  </div>
+    <div class="grid">
+      <div>
+        <label>주소</label>
+        <input id="address" placeholder="예) 서울시 ... (상세주소 포함)">
+      </div>
 
-  <div class="grid two">
-    <div>
-      <label>받는사람</label>
-      <input id="receiver">
+      <div class="grid two">
+        <div>
+          <label>받는사람</label>
+          <input id="receiver" placeholder="예) 홍길동">
+        </div>
+        <div>
+          <label>전화번호</label>
+          <input id="phone" placeholder="예) 010-1234-5678" inputmode="tel">
+        </div>
+      </div>
+
+      <div>
+        <label>입금자</label>
+        <input id="payer" placeholder="예) 홍길동">
+      </div>
+
+      <div>
+        <div id="menuBox">
+          <div class="menu-head">
+            <div>메뉴</div><div style="text-align:right;">가격</div><div style="text-align:right;">수량</div><div style="text-align:right;">소계</div>
+          </div>
+          <!-- JS로 렌더 -->
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="row"><span>총수량</span><span id="qv">0개</span></div>
+        <div class="row"><span>상품합계</span><span id="iv">0원</span></div>
+        <div class="row"><span>배송비</span><span id="sv">0원</span></div>
+        <div class="row"><strong>총액</strong><strong id="gv">0원</strong></div>
+        <div class="row"><span>입금계좌</span><span>100-154-388868 케이뱅크(Kbank) 이민혁</span></div>
+      </div>
+
+      <div class="error" id="err"></div>
+
+      <button class="btn" id="send">문자(01083325000)로 주문하기</button>
     </div>
-    <div>
-      <label>전화번호</label>
-      <input id="phone">
-    </div>
   </div>
-
-  <div>
-    <label>입금자</label>
-    <input id="payer">
-  </div>
-
-  <div id="menuBox">
-    <div class="menu-head">
-      <div>메뉴</div><div>가격</div><div style="text-align:right">수량</div><div>소계</div>
-    </div>
-  </div>
-
-  <div class="summary">
-    <div class="row"><span>총수량</span><span id="qv">0개</span></div>
-    <div class="row"><span>상품합계</span><span id="iv">0원</span></div>
-    <div class="row"><span>배송비</span><span id="sv">0원</span></div>
-    <div class="row"><strong>총액</strong><strong id="gv">0원</strong></div>
-    <div class="row"><span>입금계좌</span><span>100-154-388868 케이뱅크 이민혁</span></div>
-  </div>
-
-  <button class="btn" id="send">문자(01083325000)로 주문하기</button>
-</div>
-</div>
 </div>
 
 <script>
-const MENU=[
- {c:"신라면 맵기",i:[
-  ["제육볶음 (300g)",7000],
-  ["돼지막창 (250g)",9000],
-  ["무뼈닭발 (250g)",7000],
-  ["오돌뼈 (250g)",6000],
-  ["닭목살 (250g)",7000]
- ]},
- {c:"간장양념",i:[
-  ["돼지막창 (250g)",9000],
-  ["닭목살 (250g)",7000]
- ]}
-];
+  const ORDER_TO = "01083325000";
+  const ACCOUNT_TEXT = "100-154-388868 케이뱅크(Kbank) 이민혁";
 
-const box=document.getElementById("menuBox");
+  const MENU=[
+    {c:"신라면 맵기",i:[
+      ["제육볶음 (300g)",7000],
+      ["돼지막창 (250g)",9000],
+      ["무뼈닭발 (250g)",7000],
+      ["오돌뼈 (250g)",6000],
+      ["닭목살 (250g)",7000]
+    ]},
+    {c:"간장양념",i:[
+      ["돼지막창 (250g)",9000],
+      ["닭목살 (250g)",7000]
+    ]}
+  ];
 
-MENU.forEach(g=>{
-  box.insertAdjacentHTML("beforeend",`<div class="cat">${g.c}</div>`);
-  g.i.forEach(m=>{
-    box.insertAdjacentHTML("beforeend",`
-      <div class="menu-item" data-price="${m[1]}" data-name="${m[0]}">
-        <div>${m[0]}</div>
-        <div>${m[1].toLocaleString()}원</div>
-        <div class="qtyBox">
-          <button class="qtyBtn minus">−</button>
-          <input class="qtyInput" value="0">
-          <button class="qtyBtn plus">+</button>
+  const box=document.getElementById("menuBox");
+  const err=document.getElementById("err");
+
+  function showErr(msg){ err.style.display="block"; err.textContent=msg; }
+  function hideErr(){ err.style.display="none"; err.textContent=""; }
+
+  function formatKRW(n){ return (Number(n||0)).toLocaleString("ko-KR")+"원"; }
+
+  function shippingByQty(tq){
+    if(tq<=0) return 0;
+    return (tq < 15) ? 3000 : 0;
+  }
+
+  // 메뉴 렌더
+  MENU.forEach(g=>{
+    box.insertAdjacentHTML("beforeend",`<div class="cat">${g.c}</div>`);
+    g.i.forEach(m=>{
+      box.insertAdjacentHTML("beforeend",`
+        <div class="menu-item" data-price="${m[1]}" data-name="${m[0]}">
+          <div><span title="${m[0]}">${m[0]}</span></div>
+          <div style="text-align:right;">${formatKRW(m[1])}</div>
+          <div class="qtyBox">
+            <button class="qtyBtn minus" type="button">−</button>
+            <input class="qtyInput" value="0" inputmode="numeric" aria-label="수량">
+            <button class="qtyBtn plus" type="button">+</button>
+          </div>
+          <div class="sub" style="text-align:right;">0원</div>
         </div>
-        <div class="sub">0원</div>
-      </div>
-    `);
+      `);
+    });
   });
-});
 
-function calc(){
-  let tq=0, ti=0;
-  document.querySelectorAll(".menu-item").forEach(r=>{
-    const q=+r.querySelector(".qtyInput").value||0;
-    const p=+r.dataset.price;
-    const s=q*p;
-    r.querySelector(".sub").textContent=s.toLocaleString()+"원";
-    tq+=q; ti+=s;
+  function calc(){
+    let tq=0, ti=0;
+    document.querySelectorAll(".menu-item").forEach(r=>{
+      const q = Math.max(0, parseInt(r.querySelector(".qtyInput").value || "0", 10) || 0);
+      r.querySelector(".qtyInput").value = String(q);
+
+      const p=+r.dataset.price;
+      const s=q*p;
+      r.querySelector(".sub").textContent=formatKRW(s);
+      tq+=q; ti+=s;
+    });
+
+    const ship = shippingByQty(tq);
+    document.getElementById("qv").textContent=tq+"개";
+    document.getElementById("iv").textContent=formatKRW(ti);
+    document.getElementById("sv").textContent=formatKRW(ship);
+    document.getElementById("gv").textContent=formatKRW(ti+ship);
+  }
+
+  // + / - 버튼
+  box.addEventListener("click",e=>{
+    if(!e.target.classList.contains("qtyBtn"))return;
+    const inp=e.target.parentElement.querySelector(".qtyInput");
+    let v = parseInt(inp.value || "0", 10) || 0;
+    if(e.target.classList.contains("plus")) v++;
+    if(e.target.classList.contains("minus")) v = Math.max(0, v-1);
+    inp.value = String(v);
+    calc();
   });
-  const ship = tq===0?0:(tq<15?3000:0);
-  document.getElementById("qv").textContent=tq+"개";
-  document.getElementById("iv").textContent=ti.toLocaleString()+"원";
-  document.getElementById("sv").textContent=ship.toLocaleString()+"원";
-  document.getElementById("gv").textContent=(ti+ship).toLocaleString()+"원";
-}
 
-box.addEventListener("click",e=>{
-  if(!e.target.classList.contains("qtyBtn"))return;
-  const inp=e.target.parentElement.querySelector(".qtyInput");
-  let v=+inp.value||0;
-  if(e.target.classList.contains("plus"))v++;
-  if(e.target.classList.contains("minus")&&v>0)v--;
-  inp.value=v;
+  // 직접 입력도 허용 (숫자만)
+  box.addEventListener("input", e=>{
+    if(!e.target.classList.contains("qtyInput")) return;
+    const cleaned = (e.target.value || "").replace(/[^\d]/g,"");
+    e.target.value = cleaned === "" ? "0" : String(parseInt(cleaned,10));
+    calc();
+  });
+
+  // ✅ 여기부터가 “문자 주문하기” 동작(누락되었던 부분)
+  document.getElementById("send").addEventListener("click", ()=>{
+    hideErr();
+
+    const address = document.getElementById("address").value.trim();
+    const receiver = document.getElementById("receiver").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const payer = document.getElementById("payer").value.trim();
+
+    if(!address) return showErr("주소를 입력해 주세요.");
+    if(!receiver) return showErr("받는사람을 입력해 주세요.");
+    if(!phone) return showErr("전화번호를 입력해 주세요.");
+    if(!payer) return showErr("입금자를 입력해 주세요.");
+
+    // 주문 라인 생성
+    const lines = [];
+    let tq=0, ti=0;
+    document.querySelectorAll(".menu-item").forEach(r=>{
+      const q = parseInt(r.querySelector(".qtyInput").value || "0", 10) || 0;
+      if(q>0){
+        const name = r.dataset.name;
+        const p = +r.dataset.price;
+        const s = q*p;
+        tq += q;
+        ti += s;
+        lines.push(`${name} x ${q} = ${formatKRW(s)}`);
+      }
+    });
+
+    if(lines.length === 0) return showErr("주문 수량을 1개 이상 선택해 주세요.");
+
+    const ship = shippingByQty(tq);
+    const grand = ti + ship;
+
+    const message =
+`[주문]
+주소: ${address}
+받는사람: ${receiver}
+전화번호: ${phone}
+
+[입금자 정보]
+입금자: ${payer}
+
+주문내역:
+- ${lines.join("\n- ")}
+
+총수량: ${tq}개
+상품합계: ${formatKRW(ti)}
+배송비: ${formatKRW(ship)}
+총액: ${formatKRW(grand)}
+
+입금계좌: ${ACCOUNT_TEXT}`;
+
+    // iOS/Android: sms: 스킴으로 문자앱 열기
+    const smsUrl = `sms:${ORDER_TO}?body=${encodeURIComponent(message)}`;
+    window.location.href = smsUrl;
+  });
+
   calc();
-});
-
-calc();
 </script>
 </body>
 </html>
