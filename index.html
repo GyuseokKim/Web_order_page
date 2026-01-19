@@ -321,11 +321,23 @@
           `;
 
           const qtyInput = row.querySelector(".qtyInput");
-          qtyInput.addEventListener("input", () => {
-            if (qtyInput.value === "") qtyInput.value = "0";
+          qtyInput.addEventListener("focus", () => {
+            // 포커스 시 값이 0이면 비워서 바로 입력 가능하게
+            if (qtyInput.value === "0") {
+              qtyInput.value = "";
+            }
+          });
+          qtyInput.addEventListener("blur", () => {
+            // 포커스 아웃 시 비어있으면 0으로 복원
+            if (qtyInput.value === "") {
+              qtyInput.value = "0";
+            }
             updateTotals();
           });
-
+          qtyInput.addEventListener("input", () => {
+            // 숫자 변경 시 즉시 합계 계산
+            updateTotals();
+          });
           box.appendChild(row);
         });
       });
