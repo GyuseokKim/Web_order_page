@@ -143,4 +143,270 @@
           <label for="payer">입금자</label>
           <input id="payer" type="text" placeholder="예) 홍길동" />
           <div class="row" style="margin-top:8px;">
-            <label class="ch
+            <label class="check">
+              <input id="sameAsReceiver" type="checkbox" />
+              받는 사람과 동일
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <div class="row" style="justify-content:space-between; align-items:flex-end;">
+            <div class="sectionTitle">주문 (메뉴 옆 수량 입력)</div>
+            <div class="row" style="gap:8px;">
+              <span class="chip">총수량: <b id="totalQtyView">0</b>개</span>
+              <span class="chip">상품합계: <b id="itemsTotalView">0원</b></span>
+              <span class="chip">배송비: <b id="shippingView">0원</b></span>
+              <span class="chip">총액: <b id="grandTotalView">0원</b></span>
+            </div>
+          </div>
+
+          <div class="menu" id="menuBox">
+            <div class="menu-head">
+              <div>메뉴</div>
+              <div class="price">가격</div>
+              <div class="qty">수량</div>
+              <div class="subtot">소계</div>
+            </div>
+            <!-- 메뉴 렌더링 영역 -->
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="sumRow">
+            <div class="sumLabel">총 수량</div>
+            <div class="sumValue" id="totalQtyView2">0개</div>
+          </div>
+          <div class="sumRow">
+            <div class="sumLabel">상품 합계</div>
+            <div class="sumValue" id="itemsTotalView2">0원</div>
+          </div>
+          <div class="sumRow">
+            <div class="sumLabel">배송비 (총수량 15개 이하: 3,000원 / 초과: 무료)</div>
+            <div class="sumValue" id="shippingView2">0원</div>
+          </div>
+          <div class="sumRow">
+            <div class="sumLabel">총액</div>
+            <div class="sumValue" id="grandTotalView2">0원</div>
+          </div>
+
+          <div class="sumRow" style="align-items:flex-start;">
+            <div class="sumLabel">입금 계좌 안내</div>
+            <div class="sumValue mono" style="text-align:right;">
+              <div id="accountView">100-154-388868 케이뱅크(Kbank) 이민혁</div>
+              <div style="margin-top:6px; font-weight:600; color:var(--sub); font-size:12px;">
+                ※ 입금자명은 “입금자”란과 동일하게 입력해 주세요.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="error" id="errorBox"></div>
+
+        <button class="btn" id="sendBtn">문자(01083325000)로 주문하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ORDER_TO = "01083325000";
+    const ACCOUNT_TEXT = "100-154-388868 케이뱅크(Kbank) 이민혁";
+
+    // ✅ 배송비 규칙:
+    // - 선택 메뉴 총 수량이 15개 이하: 3,000원
+    // - 15개 초과: 0원
+    // - 단, 주문이 0개(아무것도 선택 안 함)일 때 배송비는 0원으로 표시
+    function calcShippingByQty(totalQty) {
+      if (totalQty <= 0) return 0;
+      return (totalQty <= 15) ? 3000 : 0;
+    }
+
+    // ✅ 사용자가 준 메뉴/가격(원)
+    const MENU = [
+      {
+        category: "신라면 맵기",
+        items: [
+          { name: "제육볶음 (300g)", price: 7000 },
+          { name: "돼지막창 (250g)", price: 9000 },
+          { name: "무뼈닭발 (250g)", price: 7000 },
+          { name: "오돌뼈 (250g)", price: 6000 },
+          { name: "닭목살 (250g)", price: 7000 },
+        ],
+      },
+      {
+        category: "간장양념",
+        items: [
+          { name: "돼지막창 (250g)", price: 9000 },
+          { name: "닭목살 (250g)", price: 7000 },
+        ],
+      },
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    function formatKRW(n) {
+      const num = Number(n || 0);
+      return num.toLocaleString("ko-KR") + "원";
+    }
+
+    function showError(msg) {
+      const box = $("errorBox");
+      box.style.display = "block";
+      box.textContent = msg;
+    }
+    function hideError() {
+      const box = $("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    // 체크박스: 입금자 = 받는사람
+    $("sameAsReceiver").addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      if (checked) {
+        $("payer").value = $("receiver").value.trim();
+        $("payer").setAttribute("readonly", "readonly");
+      } else {
+        $("payer").removeAttribute("readonly");
+      }
+    });
+    $("receiver").addEventListener("input", () => {
+      if ($("sameAsReceiver").checked) {
+        $("payer").value = $("receiver").value.trim();
+      }
+    });
+
+    function renderMenu() {
+      const box = $("menuBox");
+      const head = box.querySelector(".menu-head");
+      box.innerHTML = "";
+      box.appendChild(head);
+
+      MENU.forEach((group) => {
+        const cat = document.createElement("div");
+        cat.className = "catRow";
+        cat.textContent = group.category;
+        box.appendChild(cat);
+
+        group.items.forEach((it) => {
+          const row = document.createElement("div");
+          row.className = "menu-item";
+          row.dataset.name = it.name;
+          row.dataset.price = String(it.price);
+
+          row.innerHTML = `
+            <div><strong>${it.name}</strong></div>
+            <div class="price">${formatKRW(it.price)}</div>
+            <div class="qty"><input class="qtyInput" type="number" min="0" step="1" value="0" aria-label="수량" /></div>
+            <div class="subtot"><span class="subtotView">0원</span></div>
+          `;
+
+          const qtyInput = row.querySelector(".qtyInput");
+          qtyInput.addEventListener("input", () => {
+            if (qtyInput.value === "") qtyInput.value = "0";
+            updateTotals();
+          });
+
+          box.appendChild(row);
+        });
+      });
+
+      updateTotals();
+    }
+
+    function updateTotals() {
+      const rows = Array.from(document.querySelectorAll("#menuBox .menu-item"));
+      let itemsTotal = 0;
+      let totalQty = 0;
+
+      rows.forEach((row) => {
+        const price = Number(row.dataset.price || 0);
+        const qty = Number(row.querySelector(".qtyInput").value || 0);
+        const sub = price * qty;
+        row.querySelector(".subtotView").textContent = formatKRW(sub);
+        itemsTotal += sub;
+        totalQty += qty;
+      });
+
+      const shipping = calcShippingByQty(totalQty);
+      const grand = itemsTotal + shipping;
+
+      $("totalQtyView").textContent = String(totalQty);
+      $("itemsTotalView").textContent = formatKRW(itemsTotal);
+      $("shippingView").textContent = formatKRW(shipping);
+      $("grandTotalView").textContent = formatKRW(grand);
+
+      $("totalQtyView2").textContent = `${totalQty}개`;
+      $("itemsTotalView2").textContent = formatKRW(itemsTotal);
+      $("shippingView2").textContent = formatKRW(shipping);
+      $("grandTotalView2").textContent = formatKRW(grand);
+
+      $("accountView").textContent = ACCOUNT_TEXT;
+    }
+
+    function buildOrderLines() {
+      const rows = Array.from(document.querySelectorAll("#menuBox .menu-item"));
+      const lines = [];
+      let itemsTotal = 0;
+      let totalQty = 0;
+
+      rows.forEach((row) => {
+        const name = row.dataset.name || "";
+        const price = Number(row.dataset.price || 0);
+        const qty = Number(row.querySelector(".qtyInput").value || 0);
+        if (qty > 0) {
+          const sub = price * qty;
+          itemsTotal += sub;
+          totalQty += qty;
+          lines.push(`${name} x ${qty} = ${formatKRW(sub)}`);
+        }
+      });
+
+      return { lines, itemsTotal, totalQty };
+    }
+
+    $("sendBtn").addEventListener("click", () => {
+      hideError();
+
+      const address = $("address").value.trim();
+      const receiver = $("receiver").value.trim();
+      const payer = $("payer").value.trim();
+      const phone = ($("phone").value || "").trim();
+
+      if (!address) return showError("주소를 입력해 주세요.");
+      if (!receiver) return showError("받는사람을 입력해 주세요.");
+      if (!payer) return showError("입금자를 입력해 주세요.");
+      if (!phone) return showError("전화번호를 입력해 주세요.");
+
+      const { lines, itemsTotal, totalQty } = buildOrderLines();
+      if (lines.length === 0) return showError("주문 수량을 1개 이상 입력해 주세요.");
+
+      const shipping = calcShippingByQty(totalQty);
+      const grand = itemsTotal + shipping;
+
+      const message =
+`[주문]
+주소: ${address}
+받는사람: ${receiver}
+입금자: ${payer}
+전화번호: ${phone}
+
+주문내역:
+- ${lines.join("\n- ")}
+
+총수량: ${totalQty}개
+상품합계: ${formatKRW(itemsTotal)}
+배송비: ${formatKRW(shipping)}
+총액: ${formatKRW(grand)}
+
+입금계좌: ${ACCOUNT_TEXT}`;
+
+      const smsUrl = `sms:${ORDER_TO}?body=${encodeURIComponent(message)}`;
+      window.location.href = smsUrl;
+    });
+
+    // 초기 렌더
+    renderMenu();
+  </script>
+</body>
+</html>
