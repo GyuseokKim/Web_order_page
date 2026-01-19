@@ -40,6 +40,7 @@
     .check{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); user-select:none;}
     .check input{width:18px; height:18px;}
     .sectionTitle{margin-top:4px; font-size:13px; color:var(--sub);}
+
     .menu{
       border:1px solid var(--border);
       border-radius:14px;
@@ -48,10 +49,10 @@
     }
     .menu-head, .menu-item{
       display:grid;
-      grid-template-columns: 1fr 92px 120px 120px;
-      gap:10px;
+      grid-template-columns: minmax(220px, 1fr) 74px 66px 86px;
+      gap:8px;
       align-items:center;
-      padding:10px 12px;
+      padding:8px 10px;
     }
     .menu-head{
       background:rgba(255,255,255,0.03);
@@ -60,21 +61,33 @@
     }
     .menu-item{
       border-top:1px solid var(--border);
-      font-size:14px;
+      font-size:13px;
     }
-    .menu-item strong{font-size:14px;}
+    .menu-item strong{
+      font-size:13px;
+      display:block;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .catRow{
-      padding:10px 12px;
+      padding:8px 10px;
       background:rgba(255,255,255,0.02);
       color:var(--text);
       font-weight:800;
       border-top:1px solid var(--border);
+      font-size:13px;
     }
     .price, .subtot, .qty{text-align:right;}
-    .qty input{text-align:center;}
+    .qty input{
+      text-align:center;
+      padding:8px 6px;
+      border-radius:10px;
+      font-size:13px;
+    }
     .chip{
       display:inline-flex; align-items:center; gap:6px;
-      padding:8px 10px;
+      padding:7px 9px;
       border:1px solid var(--border);
       border-radius:999px;
       background:var(--chip);
@@ -112,6 +125,17 @@
     .btn:active{transform:translateY(1px);}
     .error{margin-top:10px; color:var(--danger); font-size:13px; display:none;}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+
+    @media (max-width: 420px){
+      body{padding:12px;}
+      .card{padding:14px;}
+      .menu-head, .menu-item{
+        grid-template-columns: minmax(170px, 1fr) 66px 58px 76px;
+        gap:6px;
+        padding:7px 8px;
+      }
+      .chip{padding:6px 8px; font-size:11.5px;}
+    }
     @media (min-width: 860px){
       .grid.two{grid-template-columns:1fr 1fr;}
     }
@@ -168,7 +192,6 @@
               <div class="qty">수량</div>
               <div class="subtot">소계</div>
             </div>
-            <!-- 메뉴 렌더링 영역 -->
           </div>
         </div>
 
@@ -182,7 +205,7 @@
             <div class="sumValue" id="itemsTotalView2">0원</div>
           </div>
           <div class="sumRow">
-            <div class="sumLabel">배송비 (총수량 15개 이하: 3,000원 / 초과: 무료)</div>
+            <div class="sumLabel">배송비 (총수량 15개 미만: 3,000원 / 15개 이상: 무료)</div>
             <div class="sumValue" id="shippingView2">0원</div>
           </div>
           <div class="sumRow">
@@ -212,16 +235,12 @@
     const ORDER_TO = "01083325000";
     const ACCOUNT_TEXT = "100-154-388868 케이뱅크(Kbank) 이민혁";
 
-    // ✅ 배송비 규칙:
-    // - 선택 메뉴 총 수량이 15개 이하: 3,000원
-    // - 15개 초과: 0원
-    // - 단, 주문이 0개(아무것도 선택 안 함)일 때 배송비는 0원으로 표시
+    // 배송비: 총수량 15 미만 3000 / 15 이상 0 (주문 0개면 0)
     function calcShippingByQty(totalQty) {
       if (totalQty <= 0) return 0;
-      return (totalQty <= 15) ? 3000 : 0;
+      return (totalQty < 15) ? 3000 : 0;
     }
 
-    // ✅ 사용자가 준 메뉴/가격(원)
     const MENU = [
       {
         category: "신라면 맵기",
@@ -260,7 +279,7 @@
       box.textContent = "";
     }
 
-    // 체크박스: 입금자 = 받는사람
+    // 입금자 = 받는사람
     $("sameAsReceiver").addEventListener("change", (e) => {
       const checked = e.target.checked;
       if (checked) {
@@ -295,7 +314,7 @@
           row.dataset.price = String(it.price);
 
           row.innerHTML = `
-            <div><strong>${it.name}</strong></div>
+            <div><strong title="${it.name}">${it.name}</strong></div>
             <div class="price">${formatKRW(it.price)}</div>
             <div class="qty"><input class="qtyInput" type="number" min="0" step="1" value="0" aria-label="수량" /></div>
             <div class="subtot"><span class="subtotView">0원</span></div>
@@ -384,12 +403,15 @@
       const shipping = calcShippingByQty(totalQty);
       const grand = itemsTotal + shipping;
 
+      // ✅ 문자에 "입금자 정보"를 별도 섹션으로 추가(강조)
       const message =
 `[주문]
 주소: ${address}
 받는사람: ${receiver}
-입금자: ${payer}
 전화번호: ${phone}
+
+[입금자 정보]
+입금자: ${payer}
 
 주문내역:
 - ${lines.join("\n- ")}
@@ -405,7 +427,6 @@
       window.location.href = smsUrl;
     });
 
-    // 초기 렌더
     renderMenu();
   </script>
 </body>
