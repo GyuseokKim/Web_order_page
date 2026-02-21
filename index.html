@@ -248,7 +248,7 @@
       }
     });
 
-    if(lines.length === 0) return showErr("주문 수량을 1개 이상 선택해 주세요.");
+    if(lines.length === 0) return showErr("주문 수량을 1개 이상 선택해 주세요. ");
 
     const ship = shippingByQty(tq);
     const grand = ti + ship;
